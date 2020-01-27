@@ -6,6 +6,11 @@ const ObjectId = mongodb.ObjectId;
 
 const router = Router();
 
+/*
+  Get all accounts data 
+  GET
+  http://localhost:5000/accounts/all
+*/
 router.get('/all', (req, res, next) => {
   const accounts = [];
   db.getDb()
@@ -25,6 +30,12 @@ router.get('/all', (req, res, next) => {
     });
 });
 
+/*
+  Create account 
+  POST
+  http://localhost:5000/accounts/create
+  {"creator_name":"abcd", "creator_email":"abcd"}
+*/
 router.post('/create', (req, res, next) => {
   const new_account = {
     creation_date: new Date(Date.now()).toISOString(),
@@ -52,6 +63,12 @@ router.post('/create', (req, res, next) => {
     });
 });
 
+/*
+  Create account user
+  POST
+  http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/create-user
+  {"name":"abcd", "email":"abcd"}
+*/
 router.post('/:id/create-user', (req, res, next) => {
   const new_user = {
     name: req.body.name,
@@ -90,9 +107,10 @@ router.post('/:id/create-user', (req, res, next) => {
 });
 
 /*
-POST
-http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/5e2ef8952a1f32478df9414a/update
-{"name":"abcd", "email":"abcd"}
+  Update account user
+  POST
+  http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/5e2ef8952a1f32478df9414a/update
+  {"name":"abcd", "email":"abcd"}
 */
 router.post('/:account_id/:user_id/update', (req, res, next) => {
   db.getDb()
@@ -130,5 +148,64 @@ router.post('/:account_id/:user_id/update', (req, res, next) => {
         .status(500).json({ message: 'An error occurred.' });
     });
 });
+
+/*
+  Get all account users
+  GET
+  http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/users
+*/
+router.get('/:account_id/users', (req, res, next) => {
+  db.getDb()
+    .db()
+    .collection('accounts')
+    .findOne({ _id: new ObjectId(req.params.account_id)}) 
+    .then(result => {
+      console.log(result.users);
+      res.status(200).json(result.users);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ message: 'An error occurred.' });
+    });
+});
+
+/*
+  Get account specific user
+  GET
+  http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/get-user/5e2ef8952a1f32478df9414a/
+*/
+router.get('/:account_id/get-user/:user_id/', (req, res, next) => {
+  db.getDb()
+    .db()
+    .collection('accounts')
+    .findOne({ _id: new ObjectId(req.params.account_id), users: new ObjectId(req.params.user_id)}) 
+    .then(result => {
+      if(result) {
+        db.getDb()
+        .db()
+        .collection('users')
+        .findOne({ _id: new ObjectId(req.params.user_id)})
+        .then(result => {
+          console.log(result);
+          res
+            .status(201)
+            .json({ user: result});
+        })
+        .catch(err => {
+          console.log(err);
+          res
+            .status(500).json({ message: 'An error occurred.' });
+        });
+      } else {
+        throw new Error('user is not part of account');
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      res
+        .status(500).json({ message: 'An error occurred.' });
+    });
+});
+
 
 module.exports = router;
