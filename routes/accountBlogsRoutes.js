@@ -53,10 +53,9 @@ router.post('/create', (req, res, next) => {
 });
 
 router.post('/:id/create-user', (req, res, next) => {
-  console.log(req.body)
   const new_user = {
     name: req.body.name,
-    email: req.body.mail
+    email: req.body.email
   };
   db.getDb()
     .db()
@@ -82,6 +81,48 @@ router.post('/:id/create-user', (req, res, next) => {
           res
             .status(500).json({ message: 'An error occurred.' });
         });
+    })
+    .catch(err => {
+      console.log(err);
+      res
+        .status(500).json({ message: 'An error occurred.' });
+    });
+});
+
+/*
+POST
+http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/5e2ef8952a1f32478df9414a/update
+{"name":"abcd", "email":"abcd"}
+*/
+router.post('/:account_id/:user_id/update', (req, res, next) => {
+  db.getDb()
+    .db()
+    .collection('accounts')
+    .findOne({ _id: new ObjectId(req.params.account_id), users: new ObjectId(req.params.user_id)}) 
+    .then(result => {
+      console.log(result);
+      if(result) {
+        db.getDb()
+        .db()
+        .collection('users')
+        .updateOne(
+          { _id: new ObjectId(req.params.user_id) },
+          { $set: { name: req.body.name, email: req.body.email }}
+        )
+        .then(result => {
+          console.log('user updated');
+          res
+            .status(201)
+            .json({ message: 'User created', accountId: result.insertedId});
+        })
+        .catch(err => {
+          console.log(err);
+          res
+            .status(500).json({ message: 'An error occurred.' });
+        });
+      } else {
+        throw new Error('user is not part of account');
+      }
     })
     .catch(err => {
       console.log(err);
