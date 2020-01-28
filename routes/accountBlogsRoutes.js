@@ -207,5 +207,44 @@ router.get('/:account_id/get-user/:user_id/', (req, res, next) => {
     });
 });
 
+/*
+  Get account specific user
+  GET
+  http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/get-user-new/5e2ef8952a1f32478df9414a/
+*/
+router.get('/:account_id/get-user-new/:user_id/', (req, res, next) => {
+  const result = db.getDb()
+    .db()
+    .collection('users')
+    .aggregate([
+      { $lookup: {
+          from: "accounts",
+          localField: "_id",
+          foreignField: "users",
+          as: "account"
+        }
+      },
+      //{ $project : { _id : 1 , name : 1, email: 1, "account._id": 1 } },
+      {
+        $match: {
+          "_id" : new ObjectId(req.params.user_id),
+          "account._id" : new ObjectId(req.params.account_id)
+        }
+      },
+      { $project : { _id : 1 , name : 1, email: 1 } }
+    ]).toArray().then((result)=>{
+      if(result) {
+        console.log(result);
+        res
+         .status(201)
+         .json({ user: result});
+       } else {
+         throw new Error('user not found');
+       }
+    })
+       
+});
+
+
 
 module.exports = router;
