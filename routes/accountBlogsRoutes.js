@@ -188,7 +188,7 @@ router.get('/:account_id/get-user/:user_id/', (req, res, next) => {
         .then(result => {
           console.log(result);
           res
-            .status(201)
+            .status(200)
             .json({ user: result});
         })
         .catch(err => {
@@ -236,7 +236,7 @@ router.get('/:account_id/get-user-new/:user_id/', (req, res, next) => {
       if(result) {
         console.log(result);
         res
-         .status(201)
+         .status(200)
          .json({ user: result});
        } else {
          throw new Error('user not found');
@@ -245,6 +245,66 @@ router.get('/:account_id/get-user-new/:user_id/', (req, res, next) => {
        
 });
 
+/*
+  Create account blog
+  POST
+  http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/create-blog
+  {"creator_id":"abcd1234", "blog_title":"title...."}
+*/
+router.post('/:id/create-blog', (req, res, next) => {
+  const new_blog = {
+    blog_id: new ObjectId(),
+    creator_id: req.body.creator_id,
+    blog_title: req.body.blog_title,
+    posts: []
+  };
+  db.getDb()
+    .db()
+    .collection('accounts')
+    .update({_id: new ObjectId(req.params.id)}, { $push: { blogs: new_blog } })
+    .then(result => {
+      console.log('new blog added');
+      res
+        .status(201)
+        .json({ message: 'Blog created', blogId: result.insertedId});
+    })
+    .catch(err => {
+      console.log(err);
+      res
+        .status(500).json({ message: 'An error occurred.' });
+    });
+});
 
+/*
+  Get account blogs
+  Get
+  http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/all-blogs
+*/
+router.get('/:id/all-blogs', (req, res, next) => {
+  db.getDb()
+    .db()
+    .collection('accounts')
+    //.findOne({_id: new ObjectId(req.params.id)})
+    .aggregate([
+      { $match: { $expr: {_id: new ObjectId(req.params.id)} } },
+      { $project : { _id:0, blog: "$blogs" } },
+      { $unwind: "$blog" }
+    ])
+    .toArray()
+    .then((result)=>{
+      if(result) {
+        console.log(result);
+        res
+         .status(200)
+         .json({result});
+       } else {
+         throw new Error('An error occurred.');
+       }
+    });
+});
+
+/**
+ * TODO Merge all 
+ */
 
 module.exports = router;

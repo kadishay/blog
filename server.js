@@ -9,8 +9,6 @@ app.use(bodyParser.json());
 
 app.get('/', (req, res) => res.send('Hello World! This is the future pretty UI :)'));
 app.use('/accounts', accountBlogsRoutes);
-//app.use('/posts', postRoutes);
-//app.use('/users', userRoutes);
 
 db.initDb((err, db) => {
   if (err) {
