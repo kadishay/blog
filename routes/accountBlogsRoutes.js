@@ -7,6 +7,11 @@ const ObjectId = mongodb.ObjectId;
 const router = Router();
 
 /*
+  TODO:
+  1) change account to contain owner id - plus the fetch should get the user by its id, not with a join.
+*/
+
+/*
   Get all accounts data 
   GET
   http://localhost:5000/accounts/all
