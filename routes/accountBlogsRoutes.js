@@ -64,6 +64,55 @@ router.post('/create', (req, res, next) => {
 });
 
 /*
+  Create account with a given user ID
+  POST
+  http://localhost:5000/accounts/create-new
+  {"creator_id":"abcd1234"}
+*/
+router.post('/create-new', (req, res, next) => {
+  db.getDb()
+    .db()
+    .collection('users')
+    .findOne({ _id: new ObjectId(req.body.creator_id)}) 
+    .then(result => {
+      console.log(result);
+      if (result) {
+        const new_account = {
+          creation_date: new Date(Date.now()).toISOString(),
+          blogs: [],
+          creator: {
+            name: result.name,
+            email: result.email
+          }, 
+          users: []
+        };
+        db.getDb()
+        .db()
+        .collection('accounts')
+        .insertOne(new_account)
+        .then(result => {
+          console.log(result.insertedId);
+          res
+            .status(201)
+            .json({ message: 'Account created', accountId: result.insertedId});
+        })
+        .catch(err => {
+          console.log(err);
+          res
+            .status(500).json({ message: 'An error occurred.' });
+        });
+        
+      } else {
+        res.status(500).json({ message: 'Creator user not found - please verify id' });
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ message: 'An error occurred.' });
+    });
+});
+
+/*
   Create account user
   POST
   http://localhost:5000/accounts/5e2ef58346d1fc289dac246e/create-user
@@ -303,8 +352,7 @@ router.get('/:id/all-blogs', (req, res, next) => {
     });
 });
 
-/**
- * TODO Merge all 
- */
-
 module.exports = router;
+
+
+//https://www.mongodb.com/blog/post/6-rules-of-thumb-for-mongodb-schema-design-part-1
